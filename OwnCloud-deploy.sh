@@ -24,20 +24,19 @@ systemctl enable mariadb.service
 
 
 ### SQL Absichern
-mysql_secure_installation
+read -p "OwnCloud Datenbank wird angelegt. Bitte geben Sie das neue SQL Root-Kennwort ein: " ROOT_SQL_PASS
+OWNCLOUD_SQL_PASS=`date +%s | sha256sum | base64 | head -c 20 ; echo`
+sed -i -e "s/kStKUJlmNapwr3WxmUGW/$OWNCLOUD_SQL_PASS/g" base.sql
+sed -i -e "s/rootpassword/$ROOT_SQL_PASS/g" base.sql
+
+mysql -u root < base.sql
+
 
 ### SQL restart
 systemctl restart mariadb.service
 
 git clone  https://github.com/mirei83/OwnCloud-deploy
 cd OwnCloud-deploy
-
-### OwnCloud SQL Password anpassen
-OWNCLOUD_SQL_PASS=`openssl rand -base64 20`
-
-### SQL Datenbank anlegen
-read -p "OwnCloud Datenbank wird angelegt. Bitte geben Sie das vorher vergebene SQL Root-Kennwort ein: " ROOT_SQL_PASS
-mysql -u root --password=$ROOT_SQL_PASS < base.sql
 
 cp owncloud.conf /etc/apache2/sites-available/
 
@@ -86,3 +85,11 @@ crontab -l > mycron
 echo "30 1 * * * /root/renew.sh"  >> mycron
 crontab mycron
 rm mycron
+
+
+### Infos anzeigen
+echo "###########################################################################"
+echo "Logindata for $OWNCLOUD_DOMAIN:"
+echo "MySQL User root, Passwort = $ROOT_SQL_PASS"
+echo "MySQL User ownclouduser, Passwort = $OWNCLOUD_SQL_PASS"
+echo "###########################################################################"
